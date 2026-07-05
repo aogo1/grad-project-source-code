@@ -1,0 +1,64 @@
+# SentinelAI — TheHive 5 Docker Compose
+# Location on VM2: ~/soc/thehive/docker-compose.yml
+#
+# TheHive 5 requires Cassandra (data store) and Elasticsearch (search index).
+# Deploy all three together with: docker-compose up -d
+#
+# Access TheHive at http://<VM2_IP>:9000
+# Default login: admin@thehive.local / secret
+#
+# After first login:
+#   1. Create an organization (e.g., SentinelAI)
+#   2. Create an org-level user (soc@thehive.local) with org-admin role
+#   3. Generate that user's API key for use in n8n
+#   (The platform admin CANNOT create cases — use the org user.)
+
+version: "3"
+
+services:
+  cassandra:
+    image: cassandra:4
+    container_name: cassandra
+    hostname: cassandra
+    environment:
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=1G
+      - CASSANDRA_CLUSTER_NAME=thehive
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    restart: unless-stopped
+
+  elasticsearch:
+    image: elasticsearch:7.17.0
+    container_name: elasticsearch
+    hostname: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  thehive:
+    image: strangebee/thehive:5.2
+    container_name: thehive
+    depends_on:
+      - cassandra
+      - elasticsearch
+    ports:
+      - "9000:9000"
+    environment:
+      - JVM_OPTS=-Xms1g -Xmx1g
+    command:
+      - --no-config
+      - --no-config-secret
+    restart: unless-stopped
+
+volumes:
+  cassandra_data:
+  es_data:

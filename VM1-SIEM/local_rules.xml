@@ -1,0 +1,69 @@
+<!--
+  SentinelAI — Custom Detection Rules
+  Location on VM1: /var/ossec/etc/rules/local_rules.xml
+
+  Five custom MITRE ATT&CK-tagged rules for endpoint threat detection.
+  These rules fire on Sysmon events forwarded by the Wazuh agent on VM3.
+
+  NOTE: The <if_sid> parent rule IDs reference Wazuh's built-in Sysmon
+  decoder rules. Verify these match your Wazuh version's ruleset.
+-->
+
+<group name="sentinelai,custom,">
+
+  <!-- Rule 100010: Mimikatz credential dumping tool -->
+  <rule id="100010" level="14">
+    <if_sid>61603</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)mimikatz\.exe</field>
+    <description>Mimikatz execution detected on $(win.system.computer)</description>
+    <mitre>
+      <id>T1003</id>
+    </mitre>
+    <group>credential_access,pci_dss_10.6.1,</group>
+  </rule>
+
+  <!-- Rule 100011: PowerShell obfuscation / encoded commands -->
+  <rule id="100011" level="12">
+    <if_sid>91802</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)-enc\b|-encodedcommand|frombase64string|-windowstyle hidden|iex\s*\(</field>
+    <description>PowerShell obfuscation detected on $(win.system.computer)</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+    <group>execution,defense_evasion,</group>
+  </rule>
+
+  <!-- Rule 100012: Metasploit default port 4444 (reverse shell C2) -->
+  <rule id="100012" level="13">
+    <if_sid>61603</if_sid>
+    <field name="win.eventdata.destinationPort">4444</field>
+    <description>Metasploit C2 communication detected (port 4444) on $(win.system.computer)</description>
+    <mitre>
+      <id>T1571</id>
+    </mitre>
+    <group>command_and_control,</group>
+  </rule>
+
+  <!-- Rule 100013: LSASS memory access (credential theft) -->
+  <rule id="100013" level="15">
+    <if_sid>61603</if_sid>
+    <field name="win.eventdata.targetImage" type="pcre2">(?i)\\lsass\.exe</field>
+    <description>LSASS memory access attempt on $(win.system.computer)</description>
+    <mitre>
+      <id>T1003.001</id>
+    </mitre>
+    <group>credential_access,pci_dss_10.6.1,</group>
+  </rule>
+
+  <!-- Rule 100014: Port scanning tools (reconnaissance) -->
+  <rule id="100014" level="12">
+    <if_sid>61603</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\(nmap|masscan|zenmap|angryip)\.exe</field>
+    <description>Port scanning tool detected on $(win.system.computer)</description>
+    <mitre>
+      <id>T1595</id>
+    </mitre>
+    <group>reconnaissance,discovery,</group>
+  </rule>
+
+</group>

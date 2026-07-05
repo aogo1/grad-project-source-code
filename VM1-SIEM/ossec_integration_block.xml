@@ -1,0 +1,49 @@
+<!--
+  SentinelAI — ossec.conf Integration Block
+  Location on VM1: /var/ossec/etc/ossec.conf
+
+  This is the integration block that must be placed INSIDE the first
+  <ossec_config> ... </ossec_config> element in ossec.conf.
+
+  It tells wazuh-integratord to run the custom-webhook script whenever an
+  alert at severity level 10 or higher fires, forwarding it to n8n on VM2.
+
+  IMPORTANT:
+  - The <name> must be "custom-webhook" matching the script filename in
+    /var/ossec/integrations/
+  - The <hook_url> IP must point to VM2's current IP (changes per session
+    in bridged network mode)
+  - This block must be inside the FIRST <ossec_config> block, not a later one,
+    or integratord will silently ignore it
+-->
+
+<integration>
+  <name>custom-webhook</name>
+  <hook_url>http://192.168.1.31:5678/webhook/wazuh-alerts</hook_url>
+  <level>10</level>
+  <alert_format>json</alert_format>
+</integration>
+
+
+<!--
+  OPTIONAL: Active Response Configuration
+
+  Add these blocks to enable automated process termination on the endpoint
+  when high-severity rules fire. The kill-process.cmd script must exist on
+  VM3 at: C:\Program Files (x86)\ossec-agent\active-response\bin\kill-process.cmd
+-->
+
+<!--
+<command>
+  <name>kill-process</name>
+  <executable>kill-process.cmd</executable>
+  <timeout_allowed>no</timeout_allowed>
+</command>
+
+<active-response>
+  <command>kill-process</command>
+  <location>local</location>
+  <rules_id>100010,100011,100012,100013</rules_id>
+  <timeout>0</timeout>
+</active-response>
+-->
